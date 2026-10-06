@@ -35,7 +35,7 @@ export default function Home() {
       return false;
     }
 
-    setProjects((prev) => [newItem, ...prev ])
+    setProjects((prev) => [saved, ...prev ])
 
     navigate(`/visualizer/${newId}`, {
       state: {
@@ -128,39 +128,39 @@ export default function Home() {
           <div className="projects-grid">
             
             {projects.map(({id, name, renderedImage, sourceImage, timestamp}) => (
-                <div className="project-card group">
+              <div key={id} className="project-card group">
 
-              <div className="preview">
+                <div className="preview">
 
-                <img src={renderedImage || sourceImage} alt="Project" />
+                  <img src={renderedImage || sourceImage} alt="Project" />
 
-                <div className="badge">
-                  <span>Community</span>
-                </div>
-
-              </div>
-
-              <div className="card-body">
-                <div>
-                  <h3>{name}</h3>
-
-                  <div className="meta">
-
-                    <Clock size={12} />
-                    <span>{new Date(timestamp).toLocaleDateString()}</span>
-                    <span>By Lavish</span>
-
+                  <div className="badge">
+                    <span>Community</span>
                   </div>
 
                 </div>
 
-                <div className="arrow">
-                  <ArrowUpRight size={18} />
+                <div className="card-body">
+                  <div>
+                    <h3>{name}</h3>
+
+                    <div className="meta">
+
+                      <Clock size={12} />
+                      <span>{new Date(timestamp).toLocaleDateString()}</span>
+                      <span>By Lavish</span>
+
+                    </div>
+
+                  </div>
+
+                  <div className="arrow">
+                    <ArrowUpRight size={18} />
+                  </div>
+
                 </div>
 
               </div>
-
-            </div>
 
             ))}
             
