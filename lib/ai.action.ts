@@ -1,7 +1,10 @@
+
 import puter from "@heyputer/puter.js";
-import {LAYOUTLENS_RENDER_PROMPT} from "./constants";
+import { LAYOUTLENS_RENDER_PROMPT } from "./constants";
 
 export const fetchAsDataUrl = async (url: string): Promise<string> => {
+  if (url.startsWith("data:")) return url;
+
   const response = await fetch(url);
 
   if (!response.ok) {
@@ -12,36 +15,54 @@ export const fetchAsDataUrl = async (url: string): Promise<string> => {
 
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = reject;
+
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+      } else {
+        reject(new Error("Could not convert image to data URL."));
+      }
+    };
+
+    reader.onerror = () => reject(new Error("Failed to read image."));
     reader.readAsDataURL(blob);
   });
 };
 
-export const generate3DView = async ({ sourceImage }: Generate3DViewParams) => {
-    const dataUrl = sourceImage.startsWith('data:')
-        ? sourceImage
-        : await fetchAsDataUrl(sourceImage);
+export const generate3DView = async ({
+  sourceImage,
+}: Generate3DViewParams) => {
+  if (!sourceImage) {
+    throw new Error("Please provide a floor plan image.");
+  }
 
-    const base64Data = dataUrl.split(',')[1];
-    const mimeType = dataUrl.split(';')[0].split(':')[1];
+  const dataUrl = sourceImage.startsWith("data:")
+    ? sourceImage
+    : await fetchAsDataUrl(sourceImage);
 
-    if(!mimeType || !base64Data) throw new Error('Invalid source image payload');
+  if (!dataUrl.startsWith("data:image/")) {
+    throw new Error("The uploaded file is not a supported image.");
+  }
 
-    const response = await puter.ai.txt2img(LAYOUTLENS_RENDER_PROMPT, {
-        provider: "gemini",
-        model: "gemini-2.5-flash-image-preview",
-        input_image: base64Data,
-        input_image_mime_type: mimeType,
-        ratio: { w: 1024, h: 1024 },
-    });
+  // Match the simpler request used by the working Welcome version.
+  const response = await puter.ai.txt2img({
+    prompt: LAYOUTLENS_RENDER_PROMPT,
+    input_image: dataUrl,
+    test_mode: false,
+  });
 
-    const rawImageUrl = (response as HTMLImageElement).src ?? null;
+  const rawImageUrl = (response as HTMLImageElement | null)?.src;
 
-    if (!rawImageUrl) return { renderedImage: null, renderedPath: undefined };
+  if (!rawImageUrl) {
+    throw new Error("Puter returned no generated image.");
+  }
 
-    const renderedImage = rawImageUrl.startsWith('data:')
-    ? rawImageUrl : await fetchAsDataUrl(rawImageUrl);
+  const renderedImage = rawImageUrl.startsWith("data:")
+    ? rawImageUrl
+    : await fetchAsDataUrl(rawImageUrl);
 
-    return { renderedImage, renderedPath: undefined };
-}
+  return {
+    renderedImage,
+    renderedPath: undefined,
+  };
+};
