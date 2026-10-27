@@ -52,7 +52,7 @@ const VisualizerId = () => {
                     isPublic: item.isPublic ?? false,
                 }
 
-                const saved = await createProject({ item: updatedItem, visibility: "private" }) 
+                const saved = await createProject({ item: updatedItem, visibility: "private" })
 
                 if(saved) {
                     setProject(saved);
@@ -64,50 +64,53 @@ const VisualizerId = () => {
         } finally {
             setIsProcessing(false);
         }
+    }
 
     useEffect(() => {
-      let isMounted = true;
+        let isMounted = true;
 
-      const loadProject = async () => {
-        if (!id) {
-          setIsProjectLoading(false);
-          return;
-        }
+        const loadProject = async () => {
+            if (!id) {
+                setIsProjectLoading(false);
+                return;
+            }
 
-        setIsProjectLoading(true);
+            setIsProjectLoading(true);
 
-        const fetchedProject = await getProjectById({ id });
+            const fetchedProject = await getProjectById({ id });
 
-        if (!isMounted) return;
+            if (!isMounted) return;
 
-        setProject(fetchedProject);
-        setCurrentImage(fetchedProject?.renderedImage || null);
-        setIsProjectLoading(false);
-        hasInitialGenerated.current = false;
-      };
+            setProject(fetchedProject);
+            setCurrentImage(fetchedProject?.renderedImage || null);
+            setIsProjectLoading(false);
+            hasInitialGenerated.current = false;
+        };
 
-      loadProject();
+        loadProject();
 
-      return () => {
-        isMounted = false;
-      };
-
+        return () => {
+            isMounted = false;
+        };
     }, [id]);
 
     useEffect(() => {
-      if ( isProjectLoading || hasInitialGenerated.current || !project?.sourceImage ) return;
+        if (
+            isProjectLoading ||
+            hasInitialGenerated.current ||
+            !project?.sourceImage
+        )
+            return;
 
-      if (project.renderedImage) {
-        setCurrentImage(project.renderedImage);
+        if (project.renderedImage) {
+            setCurrentImage(project.renderedImage);
+            hasInitialGenerated.current = true;
+            return;
+        }
+
         hasInitialGenerated.current = true;
-        return;
-      }
-
-      hasInitialGenerated.current = true;
-      void runGeneration(project);
+        void runGeneration(project);
     }, [project, isProjectLoading]);
-
-  }
 
   return (
 
