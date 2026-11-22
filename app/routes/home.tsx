@@ -3,9 +3,10 @@ import Navbar from "../../components/Navbar";
 import { ArrowRight, ArrowUpRight, Clock, Layers } from "lucide-react";
 import Button from "../../components/ui/Button";
 import Upload from "../../components/Upload";
-import { useNavigate } from "react-router";
+import { useNavigate, useOutletContext } from "react-router";
 import {useEffect, useRef, useState} from "react";
 import { createProject, getProjects } from "../../lib/puter.action";
+
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -18,6 +19,7 @@ export default function Home() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<DesignItem[]>([])
   const isCreatingProjectRef = useRef(false);
+  const { userName, userId } = useOutletContext<AuthContext>();
 
   const handleUploadComplete = async (base64Image: string) => {
     try{
@@ -28,10 +30,14 @@ export default function Home() {
       const name = `Residence ${newId}`;
   
       const newItem = {
-        id: newId, name, sourceImage: base64Image,
+        id: newId,
+        name,
+        sourceImage: base64Image,
         renderedImage: undefined,
-        timestamp: Date.now()
-      }
+        timestamp: Date.now(),
+        creatorName: userName || "Unknown user",
+        ownerId: userId ?? null,
+      };
   
       const saved = await createProject({ item: newItem, visibility: 'private' });
   
@@ -145,7 +151,7 @@ export default function Home() {
 
           <div className="projects-grid">
             
-            {projects.map(({id, name, renderedImage, sourceImage, timestamp}) => (
+            {projects.map(({id, name, renderedImage, sourceImage, timestamp, creatorName,}) => (
               <div key={id} className="project-card group" onClick={() => navigate(`/visualizer/${id}`)}>
 
                 <div className="preview">
@@ -166,7 +172,7 @@ export default function Home() {
 
                       <Clock size={12} />
                       <span>{new Date(timestamp).toLocaleDateString()}</span>
-                      <span>By Lavish</span>
+                      <span>By {creatorName || "Unknown user"}</span>
 
                     </div>
 

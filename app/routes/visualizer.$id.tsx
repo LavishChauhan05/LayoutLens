@@ -33,6 +33,34 @@ const VisualizerId = () => {
         document.body.removeChild(link);
     }
 
+    
+const handleShare = async () => {
+    if (!id) return;
+
+    const shareUrl = `${window.location.origin}/visualizer/${id}`;
+
+    try {
+        if (navigator.share) {
+            await navigator.share({
+                title: project?.name || "LayoutLens Project",
+                text: "Check out this architectural design!",
+                url: shareUrl,
+            });
+        } else {
+            await navigator.clipboard.writeText(shareUrl);
+            alert("Project link copied to clipboard!");
+        }
+    } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+            return;
+        }
+
+        console.error("Sharing failed:", error);
+        alert("Unable to share. Please try again.");
+    }
+};
+
+
   const runGeneration = async (item: DesignItem) => {
         if(!id || !item.sourceImage) return;
 
@@ -141,7 +169,11 @@ const VisualizerId = () => {
 
               <p>Project</p>
               <h2>{project?.name || `Residence ${id}`}</h2>
-              <p className="note">Created by You</p>
+              <p className="note">
+                {project?.ownerId === userId
+                ? "Created by you"
+                : `Created by ${project?.creatorName || "Unknown user"}`}
+              </p>
 
             </div>
 
@@ -153,7 +185,7 @@ const VisualizerId = () => {
                 
               </Button>
 
-              <Button size="sm" onClick={() => {}} className="share">
+              <Button size="sm" onClick={handleShare} className="share">
 
                 <Share2 className="w-4 h-4 mr-2" /> Share
 
@@ -213,10 +245,10 @@ const VisualizerId = () => {
                     defaultValue={50}
                     style={{ width: '100%', height: 'auto' }}
                     itemOne={
-                        <ReactCompareSliderImage src={project?.sourceImage} alt="before" className="compare-img" />
+                        <ReactCompareSliderImage src={project?.sourceImage} style={{ height:'100vh', objectFit:"fill"}}alt="before" className="compare-img" />
                     }
                     itemTwo={
-                        <ReactCompareSliderImage src={currentImage || project?.renderedImage || undefined} alt="after" className="compare-img" />
+                        <ReactCompareSliderImage src={currentImage || project?.renderedImage || undefined} style={{height:'100vh', objectFit: "contain"}}alt="after" className="compare-img" />
                     }
                 />
             ) : (

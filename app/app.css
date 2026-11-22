@@ -336,6 +336,7 @@
 
                 .render-img {
                     @apply w-full h-full object-contain transition-all duration-700 opacity-100 scale-100;
+                    max-height: 105vh;
                 }
 
                 &.is-processing {
@@ -539,17 +540,19 @@
                                 @apply text-lg font-serif font-bold text-zinc-900 group-hover:text-primary transition-colors;
                             }
 
-                            .meta {
-                                @apply flex items-center text-zinc-400 text-xs mt-1 space-x-2;
+                            
+                        .meta {
+                            @apply flex items-center text-zinc-400 text-xs mt-1 space-x-2;
 
-                                span {
-                                    @apply font-mono uppercase;
-                                }
-
-                                span:last-child {
-                                    @apply text-zinc-400 text-[10px] uppercase tracking-wide;
-                                }
+                            span {
+                                @apply font-mono uppercase;
                             }
+
+                            span:last-child {
+                                @apply text-zinc-400 text-xs uppercase tracking-wide;
+                            }
+                        }
+
 
                             .arrow {
                                 @apply w-10 h-10 rounded-full bg-zinc-50 border border-zinc-200 flex items-center justify-center text-zinc-400 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-300;
