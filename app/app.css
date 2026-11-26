@@ -600,3 +600,28 @@
         }
     }
 }
+.card-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.delete-project-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid #e4e4e7;
+    border-radius: 50%;
+    color: #71717a;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.delete-project-btn:hover {
+    color: #dc2626;
+    background: #fef2f2;
+    border-color: #fecaca;
+}
