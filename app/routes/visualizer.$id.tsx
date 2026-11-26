@@ -10,6 +10,7 @@ const VisualizerId = () => {
   
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { userId } = useOutletContext<AuthContext>();
 
   const hasInitialGenerated = useRef(false);
@@ -80,7 +81,7 @@ const handleShare = async () => {
                     isPublic: item.isPublic ?? false,
                 }
 
-                const saved = await createProject({ item: updatedItem, visibility: "private" })
+                const saved = await createProject({ item: updatedItem, visibility: "public" })
 
                 if(saved) {
                     setProject(saved);
@@ -94,33 +95,55 @@ const handleShare = async () => {
         }
     }
 
-    useEffect(() => {
-        let isMounted = true;
+    
+useEffect(() => {
+    let isMounted = true;
 
-        const loadProject = async () => {
-            if (!id) {
-                setIsProjectLoading(false);
-                return;
-            }
+    const loadProject = async () => {
+        if (!id) {
+            setIsProjectLoading(false);
+            return;
+        }
 
-            setIsProjectLoading(true);
+        setIsProjectLoading(true);
 
-            const fetchedProject = await getProjectById({ id });
+        const navigationState = location.state as {
+            initialProject?: DesignItem;
+            initialImage?: string;
+            name?: string;
+        } | null;
 
+        const initialProject = navigationState?.initialProject;
+
+        // Use the uploaded project immediately if available.
+        if (initialProject?.id === id) {
             if (!isMounted) return;
 
-            setProject(fetchedProject);
-            setCurrentImage(fetchedProject?.renderedImage || null);
+            setProject(initialProject);
+            setCurrentImage(initialProject.renderedImage || null);
             setIsProjectLoading(false);
             hasInitialGenerated.current = false;
-        };
+            return;
+        }
 
-        loadProject();
+        // Otherwise, retrieve an existing saved project.
+        const fetchedProject = await getProjectById({ id });
 
-        return () => {
-            isMounted = false;
-        };
-    }, [id]);
+        if (!isMounted) return;
+
+        setProject(fetchedProject);
+        setCurrentImage(fetchedProject?.renderedImage || null);
+        setIsProjectLoading(false);
+        hasInitialGenerated.current = false;
+    };
+
+    loadProject();
+
+    return () => {
+        isMounted = false;
+    };
+}, [id, location.state]);
+
 
     useEffect(() => {
         if (

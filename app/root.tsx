@@ -73,9 +73,29 @@ export default function App() {
     }
   }
 
-  useEffect(()=>{
-    refreshAuth()
-  },[])
+  
+useEffect(() => {
+    refreshAuth();
+
+    const handleFocus = () => {
+        refreshAuth();
+    };
+
+    const handleVisibilityChange = () => {
+        if (document.visibilityState === "visible") {
+            refreshAuth();
+        }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+        window.removeEventListener("focus", handleFocus);
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+}, []);
+
 
   const signIn = async () => {
     await puterSignIn();
@@ -83,9 +103,9 @@ export default function App() {
   }
 
   const signOut = async () => {
-    puterSignOut();
+    await puterSignOut();
     return await refreshAuth();
-  }
+}
 
   return (
       <main className="min-h-screen bg-background text-foreground relative z-10">

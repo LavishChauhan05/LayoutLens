@@ -1,11 +1,11 @@
 import type { Route } from "./+types/home";
 import Navbar from "../../components/Navbar";
-import { ArrowRight, ArrowUpRight, Clock, Layers } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Clock, Layers, Trash2 } from "lucide-react";
 import Button from "../../components/ui/Button";
 import Upload from "../../components/Upload";
 import { useNavigate, useOutletContext } from "react-router";
 import {useEffect, useRef, useState} from "react";
-import { createProject, getProjects } from "../../lib/puter.action";
+import { createProject, getProjects, deleteProject } from "../../lib/puter.action";
 
 
 export function meta({}: Route.MetaArgs) {
@@ -19,61 +19,109 @@ export default function Home() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<DesignItem[]>([])
   const isCreatingProjectRef = useRef(false);
-  const { userName, userId } = useOutletContext<AuthContext>();
+  const { userName, userId, isSignedIn } = useOutletContext<AuthContext>();
 
-  const handleUploadComplete = async (base64Image: string) => {
-    try{
+  
+const handleUploadComplete = async (base64Image: string) => {
+    if (isCreatingProjectRef.current) return false;
 
-      if(isCreatingProjectRef.current) return false;
-      isCreatingProjectRef.current = true;
-      const newId = Date.now().toString();
-      const name = `Residence ${newId}`;
-  
-      const newItem = {
-        id: newId,
-        name,
-        sourceImage: base64Image,
-        renderedImage: undefined,
-        timestamp: Date.now(),
-        creatorName: userName || "Unknown user",
-        ownerId: userId ?? null,
-      };
-  
-      const saved = await createProject({ item: newItem, visibility: 'private' });
-  
-      if(!saved) {
-        console.error("Failed to create project");
-        return false;
-      }
-  
-      setProjects((prev) => [saved, ...prev ])
-  
-      navigate(`/visualizer/${newId}`, {
-        state: {
-          initialImage: saved.sourceImage,
-          initialRendered: saved.renderedImage || null,
-          name
+    isCreatingProjectRef.current = true;
+
+    try {
+        const newId = Date.now().toString();
+        const name = `Residence ${newId}`;
+
+        const newItem: DesignItem = {
+            id: newId,
+            name,
+            sourceImage: base64Image,
+            renderedImage: undefined,
+            timestamp: Date.now(),
+            creatorName: userName || "Unknown user",
+            ownerId: userId ?? null,
+            isPublic: false,
+        };
+
+        // Saving is attempted, but navigation must not depend on it.
+        const saved = await createProject({
+            item: newItem,
+            visibility: "private",
+        });
+
+        if (saved) {
+            setProjects((prev) => [saved, ...prev]);
         }
-      });
-  
-      return true;
-    }finally {
+
+        const projectToOpen = saved ?? newItem;
+
+        navigate(`/visualizer/${newId}`, {
+            state: {
+                initialProject: projectToOpen,
+                initialImage: base64Image,
+                name,
+            },
+        });
+
+        return true;
+    } catch (error) {
+        console.error("Project upload failed:", error);
+        return false;
+    } finally {
         isCreatingProjectRef.current = false;
     }
-  }
+};
 
-  useEffect(() => {
-        const fetchProjects = async () => {
-            const items = await getProjects();
 
-            setProjects(items)
+
+const handleDeleteProject = async (
+    event: React.MouseEvent,
+    projectId: string
+) => {
+    event.stopPropagation();
+
+    const confirmed = window.confirm(
+        "Are you sure you want to delete this project? This cannot be undone."
+    );
+
+    if (!confirmed) return;
+
+    const deleted = await deleteProject({ id: projectId });
+
+    if (!deleted) {
+        alert("Unable to delete project. Please try again.");
+        return;
+    }
+
+    setProjects((prev) => prev.filter((project) => project.id !== projectId));
+};
+
+  
+useEffect(() => {
+    let cancelled = false;
+
+    const fetchProjects = async () => {
+        if (!isSignedIn) {
+            setProjects([]);
+            return;
         }
 
-        fetchProjects();
-  }, []);
+        const items = await getProjects();
+
+        if (!cancelled) {
+            setProjects(items);
+        }
+    };
+
+    fetchProjects();
+
+    return () => {
+        cancelled = true;
+    };
+}, [isSignedIn]);
+
 
   return(
-    <div className="home">
+    <div id="top" className="home">
       <Navbar/>
 
       <section className="hero">
@@ -98,7 +146,7 @@ export default function Home() {
           LayoutLens is an AI- first design environment that helps you visualize, render, and ship architectural projects faster than ever.
         </p>
 
-        <div className="actions">
+        <div id="upload" className="actions">
 
           <a href="#upload" className="cta">
             Start Building <ArrowRight className="icon" />
@@ -110,7 +158,7 @@ export default function Home() {
 
         </div>
 
-        <div id="upload" className="upload-shell">
+        <div  className="upload-shell">
 
           <div className="grid-overlay" />
 
@@ -136,7 +184,7 @@ export default function Home() {
 
       </section>
 
-      <section className="projects">
+      <section id="projects" className="projects">
 
         <div className="section-inner">
 
@@ -151,8 +199,12 @@ export default function Home() {
 
           <div className="projects-grid">
             
-            {projects.map(({id, name, renderedImage, sourceImage, timestamp, creatorName,}) => (
-              <div key={id} className="project-card group" onClick={() => navigate(`/visualizer/${id}`)}>
+            {projects
+  .filter((project) => Boolean(project.renderedImage))
+  .map(({id, name, renderedImage, sourceImage, timestamp, creatorName, ownerId}) => (
+              <div key={id} className="project-card group relative" onClick={() => navigate(`/visualizer/${id}`)}>
+
+  
 
                 <div className="preview">
 
@@ -178,9 +230,24 @@ export default function Home() {
 
                   </div>
 
-                  <div className="arrow">
-                    <ArrowUpRight size={18} />
-                  </div>
+                  
+<div className="card-actions">
+    {userId && ownerId === userId && (
+        <button
+            type="button"
+            className="delete-project-btn"
+            title="Delete project"
+            onClick={(event) => handleDeleteProject(event, id)}
+        >
+            <Trash2 size={16} />
+        </button>
+    )}
+
+    <div className="arrow">
+        <ArrowUpRight size={18} />
+    </div>
+</div>
+
 
                 </div>
 

@@ -31,21 +31,16 @@ const Navbar = () => {
 
         <div className="left">
 
-          <div className="brand">
-
-            <Box className="logo" />
-
-            <span className="name">
-              LayoutLens
-            </span>
-
-          </div>
-
+          <a href="/#top" className="brand">
+  <Box className="logo" />
+  <span className="name">
+    LayoutLens
+  </span>
+</a>
+          
           <ul className="links">
-            <a href="#">Product</a>
-            <a href="#">Pricing</a>
-            <a href="#">Community</a>
-            <a href="#">Enterprise</a>
+            <a href="#upload">Product</a>
+            <a href="#projects">Community</a>
           </ul>
 
         </div>
